@@ -1,0 +1,19 @@
+options {
+    directory "/var/cache/bind";
+
+    // Permitir consultas de cualquier cliente
+    allow-query { any; };
+    
+    // Permitir recursión
+    recursion yes;
+
+    // Reenviar consultas externas a DNS públicos
+    forwarders {
+        8.8.8.8;    // Google
+        1.1.1.1;    // Cloudflare
+    };
+
+    dnssec-validation auto;
+    auth-nxdomain no;    # conform to RFC1035
+};
+

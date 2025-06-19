@@ -1,0 +1,15 @@
+zone "site1.local" {
+    type master;
+    file "/etc/bind/db.site1.local";
+};
+
+zone "site2.local" {
+    type master;
+    file "/etc/bind/db.site2.local";
+};
+
+zone "site3.local" {
+    type master;
+    file "/etc/bind/db.site3.local";
+};
+

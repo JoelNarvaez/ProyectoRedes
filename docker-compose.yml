@@ -1,0 +1,158 @@
+version: "3.8"
+
+networks:
+  red_clientes:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/25  # Rango 192.168.100.1 - 192.168.100.126
+  red_servidores:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.128/25  # Rango 192.168.100.129 - 192.168.100.254
+
+services:
+  squid:
+    build: ./proxy-squid
+    container_name: squid
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.131
+    dns:
+    - 192.168.100.133  # BIND DNS
+    ports:
+      - "3128:3128"
+
+  apache:
+    build: ./web-server
+    container_name: apache
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.160
+    ports:
+      - "80:80"
+
+  bind:
+    build: ./dns-server
+    container_name: bind
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.133  # Corregido
+#   ports:
+#     - "53:53/udp"
+#     - "53:53/tcp"
+      
+  firewall:
+    build: ./contenedor-firewall
+    container_name: firewall
+    networks:
+      red_clientes:
+        ipv4_address: 192.168.100.6
+      red_servidores:
+        ipv4_address: 192.168.100.140
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    tty: true
+    stdin_open: true
+    command: ["/bin/bash", "-c", "/reglasFirewall.sh && bash"]
+
+  servicio_ftp:
+    image: fauria/vsftpd
+    container_name: ftp-server
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.200
+    environment:
+      - FTP_USER=user
+      - FTP_PASS=pass123
+      - PASV_ADDRESS=192.168.100.200
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+
+  servidor-ssh:
+    build: ./contenedor-ssh
+    container_name: servidor-ssh
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.150
+    ports:
+      - "22:22"
+      - "25:25"
+    privileged: true
+
+  cliente1:
+    image: ubuntu:20.04
+    container_name: cliente1
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.134
+    dns:
+      - 192.168.100.133  # Corregido
+    tty: true
+    stdin_open: true
+    command: sleep infinity
+
+  firefox:
+    image: jlesage/firefox
+    container_name: firefox
+    ports:
+      - "5800:5800"
+    environment:
+      - FIREFOX_PROXY_HOST=192.168.100.131
+      - FIREFOX_PROXY_PORT=3128
+      - FIREFOX_PROXY_TYPE=http
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.155
+    dns:
+      - 192.168.100.133  # BIND DNS
+ 
+  cliente2:
+    build: ./contenedor-cliente
+    container_name: cliente2
+    networks:
+      red_clientes:
+        ipv4_address: 192.168.100.14
+        mac_address: 02:42:ac:11:00:04
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    tty: true
+    stdin_open: true
+    command: ["/bin/bash", "-c", "/reglas.sh && bash"]
+
+  cliente3:
+    build: ./contenedor-cliente
+    container_name: cliente3
+    networks:
+      red_clientes:
+        ipv4_address: 192.168.100.3
+    depends_on:
+      - firewall
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    tty: true
+    stdin_open: true
+    command: ["/bin/bash", "-c", "/reglas.sh && bash"]
+
+  cliente4:
+    build: ./contenedor-servidores
+    container_name: cliente4
+    networks:
+      red_servidores:
+        ipv4_address: 192.168.100.201
+    depends_on:
+      - firewall
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    tty: true
+    stdin_open: true
+    command: ["/bin/bash", "-c", "/reglas.sh && bash"]
+
+  
+

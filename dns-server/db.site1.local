@@ -1,0 +1,12 @@
+$TTL 604800
+@   IN  SOA site1.local. root.site1.local. (
+            2     ; Serial
+            604800 ; Refresh
+            86400  ; Retry
+            2419200; Expire
+            604800 ); Negative Cache TTL
+
+@       IN  NS  site1.local.
+@       IN  A   192.168.100.160
+site1   IN  A   192.168.100.160
+
